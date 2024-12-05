@@ -16,7 +16,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export function generateToken(userId: number): string {
+export function generateToken(userId: string): string {
   return jwt.sign({ userId }, SECRET_KEY, { expiresIn: "1h" });
 }
 

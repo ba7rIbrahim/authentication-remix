@@ -4,13 +4,10 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLocation,
 } from "@remix-run/react";
 import type { LinksFunction } from "@remix-run/node";
 
 import stylesheet from "~/tailwind.css?url";
-import Header from "./components/layout/header";
-import Footer from "./components/layout/footer";
 import { Toaster } from "react-hot-toast";
 
 export const links: LinksFunction = () => [
@@ -46,20 +43,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-
 export default function App() {
-  const location = useLocation();
-  return (
-    <Layout>
-      {location.pathname !== "/sign-in" && location.pathname !== "/sign-up" && (
-        <Header />
-      )}
-      <main>
-        <Outlet />
-      </main>
-      {location.pathname !== "/sign-in" && location.pathname !== "/sign-up" && (
-        <Footer />
-      )}
-    </Layout>
-  );
+  return <Outlet />;
 }

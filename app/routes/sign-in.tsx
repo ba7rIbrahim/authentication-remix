@@ -1,11 +1,11 @@
-import { ActionFunction } from "@remix-run/node";
-import { Form, Link, useActionData, useNavigate } from "@remix-run/react";
+import { ActionFunction, redirect } from "@remix-run/node";
+import { Form, Link, useActionData } from "@remix-run/react";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
-import Layout from "~/components/layout/layout";
 import { generateToken, verifyPassword } from "~/utils/auth.server";
 import { authCookie } from "~/utils/cookies.server";
 import { getUserByEmail } from "~/utils/db.server";
+import AuthLayout from "~/layouts/auth-layout";
 
 export const action: ActionFunction = async ({ request }) => {
   try {
@@ -21,36 +21,45 @@ export const action: ActionFunction = async ({ request }) => {
       return { error: "Invalid email or password", status: 400 };
 
     const token = generateToken(user.id);
-    return {
-      success: true,
-      status: 200,
+    const session = await authCookie.getSession();
+    session.set("userId", token);
+    
+    return redirect("/", {
       headers: {
-        "Set-Cookie": await authCookie.serialize(token),
+        "Set-Cookie": await authCookie.commitSession(session),
+      },
+    });
+  } catch (error) {
+    return {
+      error: "Something went wrong",
+      status: 500,
+      fields: {
+        email: (await request.formData()).get("email"),
+        password: (await request.formData()).get("password"),
       },
     };
-  } catch (error) {
-    return { error: "Something went wrong", status: 500 };
   }
 };
 
 function Login() {
   const actionData = useActionData<typeof action>();
-  const navigate = useNavigate();
+  console.log(actionData);
 
   useEffect(() => {
     if (actionData?.error) {
       toast.error(actionData.error);
     } else if (actionData?.success) {
       toast.success("Login successful!");
-      navigate("/", { replace: true });
     }
-    console.log("actions=>", actionData);
-  }, [actionData, navigate]);
+  }, [actionData]);
 
   return (
-    <Layout>
+    <AuthLayout>
       <div className="h-full justify-center items-center flex flex-col gap-y-5">
-        <Form method="post" className="rounded-2xl bg-white p-6 w-96">
+        <Form
+          method="post"
+          className="rounded-2xl bg-white p-6 w-[350px] md:w-96"
+        >
           <h2 className="text-3xl font-extrabold text-black-600 mb-5">Login</h2>
           <div className="flex flex-col">
             <label htmlFor="email" className="text-gray-600 font-semibold">
@@ -77,7 +86,7 @@ function Login() {
               type="submit"
               name="_action"
               value="Sign In"
-              className="w-full rounded-xl mt-2 bg-teal-500 px-3 py-2 text-white font-semibold transition duration-300 ease-in-out hover:bg-red-600"
+              className="w-full rounded-xl mt-2 bg-teal-500 px-3 py-2 text-white font-semibold transition duration-300 ease-in-out hover:bg-teal-600"
             >
               Login
             </button>
@@ -90,7 +99,7 @@ function Login() {
           </Link>
         </p>
       </div>
-    </Layout>
+    </AuthLayout>
   );
 }
 
